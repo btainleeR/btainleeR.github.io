@@ -8,18 +8,18 @@ menu: 链接
 permalink: /links/
 ---
 
-> God made relatives. Thank God we can choose our friends.
+> 一些好朋友的链接.
 
 {% for link in site.data.links %}
-  {% if link.src == 'life' %}
+  {% if link.src == 'friends' %}
 * [{{ link.name }}]({{ link.url }})
   {% endif %}
 {% endfor %}
 
-> 友情链接
+> 交换链接
 
 {% for link in site.data.links %}
-  {% if link.src == 'www' %}
+  {% if link.src == 'exchange' %}
 * [{{ link.name }}]({{ link.url }})
   {% endif %}
 {% endfor %}
