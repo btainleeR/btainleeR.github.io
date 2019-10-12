@@ -1,12 +1,12 @@
 ---
 layout: post
-title: 那些还不错的前端 UI 组件
+title: <span class="ec ec-deer"></span> 那些用着还不错的前端 UI 组件
 categories: [Vue.js]
 description: 一些不错的前端 UI 组件
 keywords: javascript, css
 ---
 
-> 写一些用过的挺优雅的 UI 组件
+> 记一些用过的挺优雅的 UI 组件
 
 ## PC
 -  iView([官网](https://www.iviewui.com/)&nbsp;[文档](https://www.iviewui.com/docs/introduce))

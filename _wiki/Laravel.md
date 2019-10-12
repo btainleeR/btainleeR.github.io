@@ -1,9 +1,11 @@
 ---
 layout: wiki
 title: Laravel
-categories: [cate1, cate2]
-description: some word here
-keywords: keyword1, keyword2
+categories: [PHP]
+description: Laravel 的一些用用法
+keywords: Laravel, PHP
 ---
 
-Laravel
+<span class="ec ec-deer"></span><span class="ec ec-deer"></span><span class="ec ec-deer"></span> Laravel 编码的最佳实践
+
+
