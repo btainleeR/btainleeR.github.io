@@ -72,6 +72,151 @@ url('/home')
 ```php
 route('home')
 ```
-通过路由别名之后, 别名和真实的路由地址成了 Key(别名)=>Value(路由地址)的映射关系。如果我们模板中多处用 ```route()``` 定义同一个路由，当我们想要修改路由地址的时候,只要修改在路由文件中的 Key 对应的 Value 值即可，而不用在模板中挨个修改 ```url()``` 定义的路由。
+通过路由别名之后, 别名和真实的路由地址成了 Key(别名)=>Value(路由地址)的映射关系。如果我们模板中多处用 ```route('home')``` 定义同一个路由，当我们想要修改路由地址的时候,只要修改在路由文件中的 Key 对应的 Value 值即可，而不用在模板中挨个修改 ```url('/home')``` 定义的路由。
+
+### 路由分组
+对一串路由进行控制。第一个参数用于定义分组规则。
+```php
+Route::group([], function(){
+	Route::get('/home', function() {});
+	Route::get('/admin', function() {});
+});
+```
+#### 分组中间件
+通过中间件审核为‘合法’请求放行。
+```php
+Route::group(['middleware'=>'auth'], function(){});
+Route::middleware('auth')->group(function() {
+	Route::get('/home', function() {});
+	Route::get('/admin', function() {});
+});
+```
+#### 分组前缀
+大家都有/api前缀，就不要每次都写了。
+```php
+Route::group(['prefix'=>'api'], function(){});
+Route::prefix('api')->group(function() {
+	Route::get('/home');	//xxx.com/api/home
+	Route::get('/admin');
+});
+```
+#### 分组子域名
+不一定要在Nginx层面区分不同域名哟~
+```php
+Route::domain('xxx.com')->group(function() {
+	Route::get('/home', function() {});
+});
+```
+如果子域名超级多的话~
+```php
+Route::domain('{name}.xxx.com').group(function() {
+	Route::get('/home', function($name) {
+
+	});
+
+	Route::get('/user/{id}', function($name, $id){
+
+	});
+});
+```
+#### 分组子命名空间
+如果大家委托的控制器都在同一个目录下的话~
+```php
+Route::namespace('Admin')->group(function() {
+
+});
+```
+#### 分组路由命名前缀
+如果大家命名前缀相同的话~
+```php
+Route::name('user.')->group(function() {
+	Route::get('/home', function() {
+
+	})->name('profile'); //route('user.profile')
+});
+```
+### 路由高级玩法
+#### 路由与模型绑定
+通过ID查询一条数据？
+```php
+Route::get('task/{task}', function(\APP\Model\Task $task) {
+	dd($task);
+});
+```
+不想通过ID查，想通过Name字段查询只要在对应模型文件中修改getRouteKeyName()方法。
+```php
+class Task
+{
+	public function getRouteKeyName()
+	{
+		return 'name';
+	}
+}
+
+```
+#### 兜底路由
+不要怕，不会再有404了
+```php
+Route::fallback(function() {
+
+});
+```
+
+#### 频率限制
+我怀疑你不是人~ 通过 ```throttle``` 中间件控制访问频率。
+```php
+Route::middleware('throttle.60,1')->group(function() {
+	Route::get('/user', function() {
+
+	});
+});
+```
+更为细致的频率限制，为不通的路由限制不通的频率
+```php
+Route::middleware('throttle.limit_rate,1')->group(function() {
+	Route::get('/user', function() {
+		//在User模型中定义limit_rate的值
+	});
+});
+```
+
+## Laravel控制器
+控制器是 MVC 模型中的 C(Controller), MVC 的思想就是一个 HTTP 请求进入框架交给 Controller 处理, Controller 到 M(Model) 中 CURD 数据，然后将数据渲染到 V(View) 中，返回给用户渲染后的 HTML页面。  
+在Laravel中创建控制器：
+```bash
+php artisan make:controller HomeController
+```
+如果有个路由是 ``` Route::get('/home', 'HomeController@Index'); ```, 那么就要在 ```HomeController``` 中定义 index 方法。
+```php
+class HomeController
+{
+	public function index()
+	{
+		return 'xx';
+	}
+}
+```
+在控制器中获取 xxx.com/user/1 中的参数 1 以及渲染视图。
+```php
+class HomeController
+{
+	public function index(Request $request)
+	{
+		$user = $request->input('user');
+		return view('xxx')->with(['user' = > $user]);
+		//return view('xxx')->compact('user');
+	}
+}
+```
+快速生成 CURD/REST 控制器。
+```shell
+php artisan make:controller OrderControlelr --resource
+```
+会自动生成 CURD 的所有成员方法，配合特定的路由可以直接接管所有成员方法。
+```php
+Route::resource('order','OrderController');
+```
+然后通过 ``` php artisan route:list``` 命令即可查看路由命名，在模板中用 route() 方法生成对应 URL 即可。
+
 
 
