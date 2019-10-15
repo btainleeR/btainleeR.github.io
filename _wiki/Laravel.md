@@ -218,5 +218,68 @@ Route::resource('order','OrderController');
 ```
 然后通过 ``` php artisan route:list``` 命令即可查看路由命名，在模板中用 route() 方法生成对应 URL 即可。
 
+## 表单请求方法及CSRF攻击防护
+
+HTTP 请求最常见的方式就是 GET/POST 两种, HTML 表单也仅支持这两种方式。 但是 HTTP 协议还定义了很多其他的方式, 如 HEAD、 PUT、 TRACE、 CONNECT、 PATCH　和 OPTION。Javascript 的 XMLHttpRequest 对象进行 CROS 跨域资源共享时, 就是使用 OPTIONS 方法发送嗅探请求来判断服务器是否支持跨域访问。
+#### 表单伪造
+```php
+Route::get();
+Route::post();
+Route::put();
+Route::patch();
+Route::delete();
+Route::options();
+```
+Laravel 提供了表单伪造的方法让 HTML 支更多的请求方式。只要在 Form 表单中 添加名为 ```_method``` 的隐藏域即可。
+```html
+<form action="xxx" method="POST">
+	<input type="hidden"  name="_method" value="DELETE">
+</form>
+```
+#### CSRF 保护
+
+在 Laravel 中可以直接访问 【 只读 】 路由(GET/HEAD/OPTIONS), 如果访问的是 【 写入】 路由(POST/PUT/PATCH/DELETE), 则需要一个隐藏的 ```_token``` 字段, 否则 Laravel 会返回一个 419 错误。  
+如果是表单执行请求, 那么在表单中添加一个隐藏字段即可。
+```html
+<form action="xxx" method="POST">
+	<input type="hidden" name="_token" value="{{ csrf_token() }}">
+</form>
+```
+如果是在 Javascript 中执行HTTP请求,首先要在 ```<head>``` 中添加一个 ```<meta>``` 元素来存储 Token 值。
+```html
+<head>
+	<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+``` 
+然后在请求之前将该值设置为请求头。
+```javascript
+//Jquery
+$.ajaxSetup({
+	headers: {
+		'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content');
+	}
+});
+// Vue.js
+Vue.http.interceptors.push((request, next) {
+	request.headers['X-CSRF-TOKEN'] = document.querySelector('#csrf-token').getAttribute('content');
+	next();
+});
+// 如果使用了 asset/js/bootstrap.js, 则不用编写 Vue 请求头, 因为逻辑已经被其包含。 但是 meta 标签还是要写。
+````
+
+#### 排除指定 URL 可以跳过 CSRF 校验
+如果使用了第三方支付系统的回调功能, 这个时候就需要从 Laravel 的 CSRF 中间件排除回调的路由, 因为第三方支付系统不知道传递什么 ```_token``` 值给自定义路由。  
+有两种方式实现这个功能，第一种就是将路由添加到 ```routes/api.php```, 另外就是 在 VerifyCsrfToken 中间件中添加要排除的 URL。
+```php
+class VerifyCsrfToken extends middleware
+{
+	protected $except = [
+		'alipay/*',
+		'xxx.com'
+	];
+}
+``` 
+
+## Blade模板引擎
 
 
