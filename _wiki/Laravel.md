@@ -180,7 +180,7 @@ Route::middleware('throttle.limit_rate,1')->group(function() {
 });
 ```
 
-## Laravel控制器
+## Laravel控制器(C层)
 控制器是 MVC 模型中的 C(Controller), MVC 的思想就是一个 HTTP 请求进入框架交给 Controller 处理, Controller 到 M(Model) 中 CURD 数据，然后将数据渲染到 V(View) 中，返回给用户渲染后的 HTML页面。  
 在Laravel中创建控制器：
 ```bash
@@ -284,11 +284,170 @@ class VerifyCsrfToken extends middleware
 }
 ``` 
 
-## Blade模板引擎
+## Blade模板引擎 (V层)
 Blade模板引擎工作在 MVC 模型的V(View)层,  主要职责是渲染数据,直白点讲就是字符串替换。负责将控制器获取的数据渲染到含有占位符的 HTML 页面中, 渲染完成后将最终的 HTML 代码交付给控制器。  
 在 Blade 模板中变量占位符主要有以下三种形式：
 - {% raw %}{{ $name }}{% endraw %} ： 最常见的变量占位符
 - {% raw %}{{!! $content !!}}{% endraw %} ： 同城用于富文本的输出,不会将内容中的 HTML 标签转义。
-- {% raw %}@{{ $name }}{% endraw %} ： 不渲染该占位符,常用于配合 Vue.js 使用, 因为 {% raw %}{{ }}{% endraw %} 也是 Vue.js 数据绑定的标志。
+- {% raw %}@{{ $name }}{% endraw %} ： 不渲染该占位符,常用于配合 Vue.js 使用, 因为 {% raw %}{{ }}{% endraw %} 也是 Vue.js 数据绑定的标志。  
 
+### 控制结构
+#### if 条件判断
+```php
+@if()
+	statement;
+@elseif()
+	statement;
+@else
+	statement;
+@endif
+```
 
+#### unless 条件判断
+```php
+@unless()
+	//if (!)
+	statement;
+@endunless
+```
+#### isset && empty
+isset() 等价于 if(), empty() 等价于 unless
+```php
+@isset()
+	statement;
+@endisset
+
+@empty()
+	statement;
+@endempty
+```
+
+#### switch
+```php
+@switch($var)
+	@case(val)
+		statement;
+		@break;
+	@default 
+		statement;
+@endswitch
+```  
+### 循环结构
+#### for、 foreach、 while
+```php
+@for($i=0;$i<3;$i++)
+	statement;
+@endfor
+
+@foreach($items as $item)
+	statement;
+@endforeach
+
+@whiel($item = array_push())
+	statement;
+@endwhile
+```
+
+#### forelse
+可以循环就循环，不能循环干别的。
+```php
+@forelse($items as $item)
+	statement;
+@empty
+	statement;
+@endforelse
+```
+#### 牛逼哄哄的 $loop
+估计这辈子也用不到。说白了就是一个在循环中的游标, 能分分钟找准自己位置的一个东西。来看一下说明书:  
+
+属性|描述
+--|--
+$loop->index| 当前循环索引(从0开始)
+$loop->iteration| 当前是第几次循环(从1开始)
+$loop->remaining| 还剩几次循环
+$loop->count | 当前迭代的总数量
+$loop->first | 当前是否是第一次跌迭
+$loop->last | 是否是最后一次迭代
+$loop->depth | 当前循环的嵌套层级
+$loop->parent | 嵌套循环中的循环变量
+
+```php
+@foreach($items as $item)
+	@if($loop->first)
+		statement;
+	@endif
+	{% raw %}
+	{{ $loop->parent->iteration }}
+	{{ $loop->parent->first}}
+	{% endraw %}
+	@if($loop->last)
+		statement;
+	@endif
+@endforeach
+```
+### 横纵向拓展Blade
+Blade 通过继承实现纵向拓展, 通过引入和插槽实现横向拓展。
+#### 纵向拓展
+通过 @yield('key') 方式在父级模板中定义展位符, 然后在子模板中用 ```@extends('layout')``` 指定父模板后, 用 ```@section('key',value)``` 或者 ```@section('key') value @endsection``` 来将 value 的值放置到占位符的位置。 
+```php
+layout.blade.php :
+	@yield('title')
+	@yield('js')
+-----------------------------------------------
+any.blade.php ：
+	@extends('layout')
+	@section('title', 'Human0722.github.io')
+	@section('js')
+		<script>
+			statement;
+		</script>
+	@endsection
+```
+实现纵向拓展还有一种方法, 上面这种方法的特点是 只在父模板中定义了一个点, 将子模板中的代码塞进去。而通过 ```@section('name') statement; @show``` 这种凡是像是 在父模板中定义了一个区块, 该区块中还含有父模板中的代码, 在子模板中可以 保留/丢弃 区块中的代码然后载入自定义代码。
+```php
+layout.blade.php :
+	@section('block')
+		<script>xxx</script>
+	@show
+------------------------------------------------
+any.blade.php :
+	@section('block')
+		@parent
+		statement;
+	@endsection
+```
+
+### 横向拓展Blade
+模板的单继承模式限定纵向拓展的不灵活性, 再来看看类似 ```trait``` 的横向灵活拓展。
+#### include
+```php
+button.blade.php : 
+	{% raw %}
+	<button>{{$name}}</button>
+	{% endraw %}
+------------------------------------------------
+any.blade.php :
+	<div>
+		@include('button',['name'=>‘Login'])
+	</div>
+```
+#### slot && component
+一定是 Vue 先抄的我。
+```php
+alert.blade.php :
+	{% raw %}
+	<div>
+		This is title: {{ $title }}
+		{{ $slot }}
+	</div>
+	{% endraw %}
+--------------------------------------------------
+any.blade.php :								|
+	@component('alert',['title'=>'Home'])	|	
+		<strong>Error</strong>				|
+	@endcomponent							|
+```  
+### Blade高级用法
+倒立吃饭过度优雅？
+
+## 数据库和 Eloquent (M层)
