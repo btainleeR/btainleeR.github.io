@@ -242,13 +242,17 @@ Laravel 提供了表单伪造的方法让 HTML 支更多的请求方式。只要
 如果是表单执行请求, 那么在表单中添加一个隐藏字段即可。
 ```html
 <form action="xxx" method="POST">
+	{% raw %}
 	<input type="hidden" name="_token" value="{{ csrf_token() }}">
+	{% endraw %}
 </form>
 ```
 如果是在 Javascript 中执行HTTP请求,首先要在 ```<head>``` 中添加一个 ```<meta>``` 元素来存储 Token 值。
 ```html
 <head>
+	{% raw %}
 	<meta name="csrf-token" content="{{ csrf_token() }}">
+	{% endraw %}
 </head>
 ``` 
 然后在请求之前将该值设置为请求头。
@@ -281,5 +285,10 @@ class VerifyCsrfToken extends middleware
 ``` 
 
 ## Blade模板引擎
+Blade模板引擎工作在 MVC 模型的V(View)层,  主要职责是渲染数据,直白点讲就是字符串替换。负责将控制器获取的数据渲染到含有占位符的 HTML 页面中, 渲染完成后将最终的 HTML 代码交付给控制器。  
+在 Blade 模板中变量占位符主要有以下三种形式：
+- {% raw %}{{ $name }}{% endraw %} ： 最常见的变量占位符
+- {% raw %}{{!! $content !!}}{% endraw %} ： 同城用于富文本的输出,不会将内容中的 HTML 标签转义。
+- {% raw %}@{{ $name }}{% endraw %} ： 不渲染该占位符,常用于配合 Vue.js 使用, 因为 {% raw %}{{ }}{% endraw %} 也是 Vue.js 数据绑定的标志。
 
 
