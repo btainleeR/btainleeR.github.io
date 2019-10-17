@@ -451,3 +451,65 @@ any.blade.php :								|
 倒立吃饭过度优雅？
 
 ## 数据库和 Eloquent (M层)
+### 用迁移文件定义数据表结构
+Laravel 中用 Migrations 文件定义数据表结构, 这样当项目迁移的时候可以用迁移文件创建和原来相同的数据表结构,另外 Migration 的语法比 SQL 语句更为简便。  
+迁移文件( Migrations )分为创建表迁移和修改表迁移两种。
+```shell
+php artisan meke:migration create_users_table --create=user # 创建表迁移
+php artisan make:migration alter_users_add_nickname --table=users # 更新数据表迁移
+```
+因为个人觉得创建的文件名还是有点长的, 所以我一般选择在创建 Model 时顺便创建迁移文件。
+```php
+php artisan make:model User -m #-m 代表创建对应的迁移文件
+```
+创建完迁移文件后, 可以在 ```database/migrations``` 目录下找到对用文件。在对用的迁移文件中, 有 ``` up() ``` 和 ```down()``` 两个方法。当使用命令 ``` php artisan migrate``` 执行迁移的时候会调用 up() 方法。 而当用 ``` php artisan migration:rollback``` 执行回滚操作时, 会调用 down() 方法。  
+
+通过修改 up() 方法来定义 表的结构:
+```php
+Scheme::create('users', function(Blueprint $table) {
+	$table->increments('id');
+	$table->string('name', 100)->comment('用户名');
+	$table->string('email')->unique();
+	$table->timestamp('email_verified_at')->nullable();
+	$table->remmberToken();
+});
+```
+down() 方法就比较简单了，主要就是删除表:
+```php
+Schema::dropIfExists('users');
+```
+修改表和创建表相似，同样要在 ```database/migrations``` 下找到对应的迁移文件, 然后在 up() 方法中编写要修改的字段即可.
+```php
+Schema::table('users', function(Blueprint $table) {
+	$table->string('nickname',100)->after('name')->nullable()->comment('昵称');
+});
+```
+通过上面的方法可以轻松的实现 数据表字段的增加, 当时却无法修改已经存在的字段。完成此操作需要 ```doctrine/dbal``` 扩展包:
+```shell
+composer require doctrine/dbal
+```  
+然后就可以通过以下方法修改了:
+```php
+ $table->string('nickname',50)->change();
+ $table->renameColumn('name','username');
+ ```
+ 更多的字段属性请参考 [Laravel-china 文档]()  
+ 修改完迁移文件后就要通过命令将 表结构写入数据库中,首先是执行迁移:
+ ```php
+ php artisan migrate
+ ```
+ 回滚迁移, 就是撤回执行的迁移操作。默认是撤回上一次的迁移,也可以通过 ``` --step``` 指定撤回步数。
+ ```php
+ php artisan migrate:rollback
+ php artisan migrate:rollback --step=5
+ ```
+ 当然也可以将数据库恢复到原始空数据状态。这个操作会丢失所有数据!
+ ```php
+ php artisan migrate:reset
+ ```
+
+### Fake Data
+Fake Data其实是数据填充, 因为在开发时可能会遇到需要一定量数据的时候, 比如做分页功能的时候, 就需要一定量的数据来支撑效果。
+
+
+
