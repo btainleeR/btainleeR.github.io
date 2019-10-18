@@ -509,7 +509,62 @@ composer require doctrine/dbal
  ```
 
 ### Fake Data
-Fake Data其实是数据填充, 因为在开发时可能会遇到需要一定量数据的时候, 比如做分页功能的时候, 就需要一定量的数据来支撑效果。
+Fake Data其实是数据填充, 因为在开发时可能会遇到需要一定量数据的时候, 比如做分页功能的时候, 就需要一定量的数据来支撑效果。  
+假如为 ```Users``` 表创建填充文件, 那么填充文件的名称应该是 ```UserTableSeeder``` 。创建命令如下 :
+```shell
+php artisan make:seeder UserTableSeeder
+```
+此时在 ```database/seeds``` 目录下就会有 ```UsersTableSeeder``` 类, 通过修改 ```run()``` 方法就可以定义为每个字段填充的字段。
+```php
+public function run()
+{
+	DB::table('users')->insert([
+		'name' => str_random(10),
+		'emil' => str_random(8)  . '@gmail.com'
+	]);
+}
+```
+执行填充有两种方法，第一种是执行填充命令时指定填充类名称,这样框架就会自动调用指定类的 ```run()``` 方法。
+```shell
+php artisan db:seed --class=UsersTableSeeder
+```
+另一种方法是不在命令行上指定填充类名称,这样系统会默认调用 ```database/seeds/UsersTableSeeder``` 中的 ```run()``` 方法。然后在这个方法中调用想要执行的填充类的 ```run()``` 方法。
+```php
+database/seeds/DatabaseSeeder.php:
+	public function run()
+	{
+		$this->call(UsersTableSeeder::class);
+	}
+```
+上面的方法每执行一次迁移就可以往数据库中填充一条记录, 要想填充多条数据则需要多次执行或者在填充数据代码的外围包裹循环结构。我们也可以通过模型工厂填充数据, 比上面两种方法都要优雅地多。  
+假设已经有了 ```Student``` 模型类, 那么要通过命令创建一个工厂类, 通过 ```-m``` 参数指定对应的模型类 ：
+```shell
+php artisan make:factory StudentFactory -m Student
+```
+本以为定义好了迁移文件, 工厂类就会自动完成各个字段的数据填充代码生成, 然而不可以。生成好的工厂类的内部代码可以参考框架自带的 ```UserFactory``` 内部代码 ：
+```php
+$factory->define(App\User::class, function (Faker $faker) {
+    return [
+        'name' => $faker->name,
+        'email' => $faker->unique()->safeEmail,
+        'email_verified_at' => now(),
+        'password' => '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // secret
+        'remember_token' => Str::random(10),
+    ];
+});
+```
+然后然我们回到填充的话题, 同样的要执行填充, 就要在填充类的 ```run()``` 方法中调用填充数据代码, 可以通过以下代码执行填充。
+```php
+public function run() 
+{
+	factory(\App\User::class, 5)->create();
+}
+```
+### 通过查询构建器 CURD
+查询构建器 (Query Builder)是 Laravel 提供的与数据库交互的接口。在某种层面上抽象了底层的不同数据库, 向上提供统一的简洁的接口。
+
+#### 通过 DB 门面执行原生 SQL 语句
+```DB``` 门面既可以用于构建 查询构建器方法链, 也可以用于原生语句的执行。
 
 
 
