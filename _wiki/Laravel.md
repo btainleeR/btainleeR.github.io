@@ -560,11 +560,52 @@ public function run()
 	factory(\App\User::class, 5)->create();
 }
 ```
-### 通过查询构建器 CURD
-查询构建器 (Query Builder)是 Laravel 提供的与数据库交互的接口。在某种层面上抽象了底层的不同数据库, 向上提供统一的简洁的接口。
+### DB门面
+查询构建器 (Query Builder)是 Laravel 提供的与数据库交互的接口。在某种层面上抽象了底层的不同数据库, 向上提供统一的简洁的接口。Eloquest 模型也是基于查询构建起。
 
-#### 通过 DB 门面执行原生 SQL 语句
-```DB``` 门面既可以用于构建 查询构建器方法链, 也可以用于原生语句的执行。
+#### 执行原生 SQL 语句
+```php
+$users = DB::select('select * from `users`');	// R of CURD, 返回对象数组
+
+$name = 'xxx';	// R of CURD ,返回对象数组, 防止 SQL 注入
+$users = DB::select('select * from `users` where `name` = ?',[$name]);	
+$users = DB::select('select * from `users` where `name` = :name', ['name' => $name]);
+
+$name = 'xxx',	// C of CURD, 返回 true 或抛异常
+$email = 'xxx@qq.com',
+$password = bcrypt('password');
+$flag = DB::insert('insert into `users` (`name`, `email`, `password`) values(?, ?, ?)', [$name, $email, $password]);
+
+$name = 'newName';	// U of CURD ,返回被改变的记录数
+$affectRows = DB::update('update `users` set `name` = ? where id = ?', [$name, 8]);
+
+$id = 3;	//	D of CURD, 返回被删除的记录数 或 抛异常
+$affectRows = DB::delete('delete from `users` where id = ?', [$id]);
+```  
+#### 使用查询构建器 CURD
+```php
+
+$users = DB::table('users')->get();		// R, 返回对象数组
+$users = DB::table('users')->where('col1','col1Val')->where('col2','<','col2Val')->select('id','name')->get();	// R, 多个where条件, 指定字段, 返回对象数组。
+$users = DB::table('users')->where('xxx','xxx')->first();	// R, 返回单个对象
+
+$flag = DB::table('users')->insert(['name' => 'name']);		// C, 返回 true
+$flag = DB::table('users')->insertGetId(['name' => 'name']);	// C, 返回插入记录的ID
+$flag = DB::table('users')->insert([	// C 
+	['name' => 'name1'],
+	['name' => 'name2']
+]);
+
+$affectRows = DB::table('users')->where('id','>',3)->update(['name'=>'newName']);	// U, 返回更新的条数
+DB::table('likes')->where('id',10)->increment('count');	// count+1
+DB::table('likes')->where('id',10)->increment('count', 5); // count + 5
+DB::table('likes')->where('id',10)->decrement('vote');	// vote -1
+
+$affectRows = DB::table('users')->where('id','<','3')->delete(); // D, 返回删除的条数
+$affectRows = DB::table('users')->truncate();	// D, 清空表后重置自增ID
+```
+#### 复杂的查询语句
+
 
 
 
