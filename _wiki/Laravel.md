@@ -605,7 +605,81 @@ $affectRows = DB::table('users')->where('id','<','3')->delete(); // D, 返回删
 $affectRows = DB::table('users')->truncate();	// D, 清空表后重置自增ID
 ```
 #### 复杂的查询语句
-
+```php
+// 查询部分字段
+$emails = DB::table('users')->where('name','Human0722')->value('email');
+// 是否存在, 返回 true / false
+$exists = DB::table('users')->where('name', 'Human0722')->exists();
+// 以某个字段为键，另一个字段为值的键值对数据结构, pluck 第一个参数为值, 第二个参数为键。返回 array.
+$users = DB::table('users')->where('id','>',0)->pluch('name','id');
+// 一些统计函数
+$num = DB::table('users')->count();		// 计数
+$sum = DB::table('users')->sum('id');	// 求和
+$avg = DB::table('users')->avg('id');	// 平均值
+$min = DB::table('users')->min('id');	// 最小值
+$max = DB::table('users')->max('id');	// 最大值
+// where-base
+DB::table('posts')->where('views', 0)->get();
+DB::table('posts')->where('views','>',0)->get();
+DB::table('posts')->where('views','<>',0)->get();
+// where-list
+DB::table('posts')->where('title', 'like', 'Laravel%')->get();
+// where-and
+DB::table('posts')->where('id', '<', 10)->where('views', '>', 0)->get();
+// where-and
+DB::table('posts')->where([
+	['id', '<', 10],
+	['views', '>', 0]
+])->get();
+// where-or
+DB::table('posts')->where('id','<',10)->orWhere('views','>',0)->get();
+// where-between
+DB::table('posts')->betweenWhere('views',[10,100])->get();
+// where-not-between
+DB::table('posts')->whereNotBetween('views',[10, 100])->get();
+// where-in
+DB::table('posts')->whereIn('id',[1, 3, 5, 7])->get();
+// where-not-in
+DB::table('posts')->whereNotIn('id', [1, 3, 5])->get();
+// where-null
+DB::table('user')->whereNull('email_verified_at')->get();
+// where-dateTime
+DB::table('posts')->whereYear('created_at', '2018')->get();
+DB::table('posts')->whereMonth('created_at', '11')->get();
+DB::table('posts')->whereDay('created_at', '29')->get();
+DB::table('posts')->whereDate('created_at', '2018-11-01')->get();
+DB::table('posts')->whereTime('created_at', '14:00')->get();
+// where-equal
+DB::table('posts')->whereColumn('updated_at','=','created_at')->get();
+// json(MySQL > 5.7 support Json datastruct)
+DB::table('users')->where('options->language','en')->get();
+// whereJsonContains 
+DB::table('user')->whereJsonContains('options->language', 'en_US')->get();
+// complex like  where A and (B or C)
+select * from posts where id <= 10 or (views > 0 and created_at < '2018-11-28 14:00');
+DB::table('posts')->where('id','<=', 10)->orWhere(function($query){
+	$query->where('views','>',0)
+	->whereDate('created_at', '<', '2018-11-28')
+	->whereTime('created_at', '<', '14:00')
+	->get();
+});
+// complex like exist(A and (B or C))
+select * from `users` where exists(select 1 from `posts` where posts.user_id = user.id);
+DB::table('users')->whereExists(function($query) {
+	$query->select(DB::raw(1))
+	->from('posts')
+	->whereRaw('posts.user_id = users.id')
+})->get();
+// 子查询
+select * from posts where user_id in (select id from users where email_verified_at is not null);
+$users = DB::table('users')->whereNotNull('email_verified_at')->select('id');
+$posts = DB::table('posts')->whereInSub('user_id', $users)->get();
+```
+#### 连接查询
+以下是几种SQL连接查询术语：
+- 内连接
+- 外连接
+- 交叉连接
 
 
 
