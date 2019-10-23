@@ -678,8 +678,49 @@ $posts = DB::table('posts')->whereInSub('user_id', $users)->get();
 #### 连接查询
 以下是几种SQL连接查询术语：
 - 内连接
+>  使用比较运算符进行表间比较, 查询与连接条件匹配的数据。 当左表中的记录 在右表中找不到相应的记录能够满足连接条件时, 那么左表中的记录就不会出现在结果集中。
 - 外连接
+> 分为左连接和右连接以及全连接, 其与内连接的区别就是 左连接结果集返回左表(A left join B: A 为左表)所有行,在 左连接中左表即使没能够在右表中找到符合连接条件的记录时，也会返回一条包含左表值的记录,该记录对应的右表字段为空值。   
+> 右连接刚好与左连接相反，返回右表(A right join B: B为左表)中所有行, 其余与左连接刚好相反。
+> 全连接返回左右表所有行,当某一行在另一个表中没有匹配行,则返回记录中另一个表的字段为空值, 只返回一条记录。
 - 交叉连接
+> 笛卡尔积, 不带 where 条件子句。返回两个表的笛卡尔积,返回记录数等于两个表行数的乘积。其与全连接不同的地方在于: 当任意表中某一行在另外一个表中没有匹配行时,全连接返回一条记录,而交叉连接返回 ```1*n``` 条记录。 ( n 为另一个表中的记录数。)
+
+##### 内连接
+```php
+$posts = DB::table('posts')
+	->join('users', 'users.id', '=', 'posts.user_id')
+	->select('posts.*', 'users.name', 'users.email')
+	->get();
+```
+##### 外连接-左连接
+```php
+$posts = DB::table('posts')		// posts 表为左表
+	->leftJoin('users', 'users.id', '=', 'posts.user_id')
+	->select('posts.*','users.name', 'users.email')
+	->get();
+```
+##### 外连接-右连接
+```php
+$posts = DB::table('posts')		// posts 表为右表
+	->rightJoin('users', 'users.id', '=', 'posts.user_id')
+	->select('posts.*', 'users.name', 'users.email')
+	->get();
+```
+##### 外连接-全连接
+```php
+// DB 门面暂不支持 全连接语法。
+$posts = DB::table('posts')->select('select posts.*, users.name, users.email from posts full join users on posts.user_id = user.id;');
+```
+##### 交叉连接
+```php
+$posts = DB::table('posts')
+	->crossJoin('users', 'users.id', '=', 'posts.user_id')
+	->select('posts.*', 'users.name', 'users.email')
+	->get();
+```
+#### 联合查询
+> union 查询
 
 
 
